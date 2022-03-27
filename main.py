@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from utils import validate_url
 
 
 class UrlModel(BaseModel):
@@ -9,14 +10,10 @@ class UrlModel(BaseModel):
 app = FastAPI()
 
 
-"""
-Heuristic:
-- No google search results.
-"""
-
-
-@app.post("/")
+@app.post("/", response_model=UrlModel)
 async def root(urlObject: UrlModel):
-    url = urlObject.url
-    print(url)
-    return urlObject
+    urlObject.url = urlObject.url.strip()
+    error = validate_url(urlObject.url)
+    if not error:
+        return urlObject
+    raise HTTPException(status_code=400, detail=error)
